@@ -10,6 +10,8 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
+            margin: 0;
+            background-color: #f4f4f4;
         }
         button {
             background-color: #4CAF50;
@@ -18,9 +20,15 @@
             margin: 10px;
             border: none;
             cursor: pointer;
+            border-radius: 5px;
         }
         button:disabled {
             background-color: #ccc;
+        }
+        @media (max-width: 600px) {
+            button {
+                padding: 8px 16px;
+            }
         }
     </style>
 </head>
@@ -37,271 +45,51 @@
     let contract;
     let userAddress;
 
-    const contractAddress = '0x1a5d6791e228d90c2d7b154238a88d50650c491e'; // Your contract address
+    const contractAddress = '0x1a5d6791e228d90c2d7b154238a88d50650c491e'; // Replace with your contract address
     const contractABI = [
-        {
-            "inputs": [],
-            "name": "claimTokens",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address[]",
-                    "name": "recipients",
-                    "type": "address[]"
-                }
-            ],
-            "name": "distributeTokens",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "_hancToken",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "_tokensPerUser",
-                    "type": "uint256"
-                }
-            ],
-            "stateMutability": "nonpayable",
-            "type": "constructor"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "owner",
-                    "type": "address"
-                }
-            ],
-            "name": "OwnableInvalidOwner",
-            "type": "error"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "account",
-                    "type": "address"
-                }
-            ],
-            "name": "OwnableUnauthorizedAccount",
-            "type": "error"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "previousOwner",
-                    "type": "address"
-                },
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "newOwner",
-                    "type": "address"
-                }
-            ],
-            "name": "OwnershipTransferred",
-            "type": "event"
-        },
-        {
-            "inputs": [],
-            "name": "renounceOwnership",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "uint256",
-                    "name": "_tokensPerUser",
-                    "type": "uint256"
-                }
-            ],
-            "name": "setTokensPerUser",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "name": "toggleAirdrop",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "user",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "tokens",
-                    "type": "uint256"
-                }
-            ],
-            "name": "TokensAirdropped",
-            "type": "event"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "to",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "uint256",
-                    "name": "tokens",
-                    "type": "uint256"
-                }
-            ],
-            "name": "TokensTransferred",
-            "type": "event"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "newOwner",
-                    "type": "address"
-                }
-            ],
-            "name": "transferOwnership",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address",
-                    "name": "to",
-                    "type": "address"
-                },
-                {
-                    "internalType": "uint256",
-                    "name": "amount",
-                    "type": "uint256"
-                }
-            ],
-            "name": "transferUnclaimedTokens",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {
-                    "internalType": "address[]",
-                    "name": "users",
-                    "type": "address[]"
-                },
-                {
-                    "internalType": "bool",
-                    "name": "eligibility",
-                    "type": "bool"
-                }
-            ],
-            "name": "updateEligibility",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": true,
-                    "internalType": "address",
-                    "name": "user",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "internalType": "bool",
-                    "name": "eligible",
-                    "type": "bool"
-                }
-            ],
-            "name": "UserEligibilityUpdated",
-            "type": "event"
-        },
-        {
-            "inputs": [],
-            "name": "airdropEnabled",
-            "outputs": [
-                {
-                    "internalType": "bool",
-                    "name": "",
-                    "type": "bool"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "name": "hancToken",
-            "outputs": [
-                {
-                    "internalType": "contract IERC20",
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        }
-    ]; // Your contract ABI
+        { "inputs": [], "name": "claimTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "inputs": [{ "internalType": "address[]", "name": "recipients", "type": "address[]" }], "name": "distributeTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "inputs": [{ "internalType": "address", "name": "_hancToken", "type": "address" }, { "internalType": "uint256", "name": "_tokensPerUser", "type": "uint256" }], "stateMutability": "nonpayable", "type": "constructor" },
+        { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }], "name": "OwnableInvalidOwner", "type": "error" },
+        { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }], "name": "OwnableUnauthorizedAccount", "type": "error" },
+        { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }], "name": "OwnershipTransferred", "type": "event" },
+        { "inputs": [], "name": "renounceOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "inputs": [{ "internalType": "uint256", "name": "_tokensPerUser", "type": "uint256" }], "name": "setTokensPerUser", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "inputs": [], "name": "toggleAirdrop", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "user", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "tokens", "type": "uint256" }], "name": "TokensAirdropped", "type": "event" },
+        { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "tokens", "type": "uint256" }], "name": "TokensTransferred", "type": "event" },
+        { "inputs": [{ "internalType": "address", "name": "newOwner", "type": "address" }], "name": "transferOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "transferUnclaimedTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "inputs": [{ "internalType": "address[]", "name": "users", "type": "address[]" }, { "internalType": "bool", "name": "eligibility", "type": "bool" }], "name": "updateEligibility", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "user", "type": "address" }, { "indexed": false, "internalType": "bool", "name": "eligible", "type": "bool" }], "name": "UserEligibilityUpdated", "type": "event" },
+        { "inputs": [], "name": "airdropEnabled", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
+        { "inputs": [], "name": "hancToken", "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }
+    ]; // Replace with your contract ABI
 
     window.addEventListener('load', async () => {
         if (window.ethereum) {
             web3 = new Web3(window.ethereum);
-            try {
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-            } catch (error) {
-                console.error("User denied account access");
-            }
+            document.getElementById('connect-wallet').addEventListener('click', connectWallet);
+            document.getElementById('claim-tokens').addEventListener('click', claimTokens);
         } else {
             alert('Please install MetaMask!');
         }
-
-        document.getElementById('connect-wallet').addEventListener('click', connectWallet);
-        document.getElementById('claim-tokens').addEventListener('click', claimTokens);
     });
 
     async function connectWallet() {
         if (window.ethereum) {
-            const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-            userAddress = accounts[0];
-            document.getElementById('status').innerText = `Connected: ${userAddress}`;
-            contract = new web3.eth.Contract(contractABI, contractAddress);
-            document.getElementById('claim-tokens').disabled = false;
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                userAddress = accounts[0];
+                document.getElementById('status').innerText = `Connected: ${userAddress}`;
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+                document.getElementById('claim-tokens').disabled = false;
+            } catch (error) {
+                console.error("User denied account access");
+                document.getElementById('status').innerText = 'Error connecting wallet.';
+            }
         } else {
-            alert('MetaMask not detected');
+            alert('MetaMask not detected. Please install MetaMask.');
         }
     }
 
