@@ -55,11 +55,23 @@
         // Add other contract ABI entries here as needed
     ];
 
-    const web3Modal = new Web3Modal({
-        cacheProvider: false,
-        providerOptions: {
-            // Add options for different wallets here
+    const providerOptions = {
+        // Include provider options for wallets
+        metamask: {
+            package: true, // For MetaMask
+        },
+        walletconnect: {
+            package: WalletConnectProvider, // Required
+            options: {
+                qrcode: true,
+            }
         }
+        // Add other providers if needed
+    };
+
+    const web3Modal = new Web3Modal({
+        cacheProvider: true,
+        providerOptions
     });
 
     document.getElementById('connect-wallet').addEventListener('click', async () => {
@@ -76,7 +88,7 @@
             document.getElementById('claim-tokens').disabled = false;
         } catch (error) {
             console.error("Error connecting wallet", error);
-            document.getElementById('status').innerText = 'Error connecting wallet.';
+            document.getElementById('status').innerText = 'Error connecting wallet. Check console for details.';
         }
     });
 
