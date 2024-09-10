@@ -50,8 +50,8 @@
 
     const contractAddress = '0x1a5d6791e228d90c2d7b154238a88d50650c491e'; // Replace with your contract address
     const contractABI = [
-        // Replace with your contract ABI
-        { "inputs": [], "name": "claimTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
+        { "inputs": [], "name": "claimTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "inputs": [ { "internalType": "address", "name": "user", "type": "address" } ], "name": "hasClaimed", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }
         // Add other contract ABI entries here as needed
     ];
 
@@ -59,14 +59,6 @@
         cacheProvider: false,
         providerOptions: {
             // Add options for different wallets here
-            /* Example:
-            "walletconnect": {
-                package: WalletConnectProvider,
-                options: {
-                    qrcode: true
-                }
-            }
-            */
         }
     });
 
@@ -113,8 +105,8 @@
                 document.getElementById('status').innerText = 'Tokens claimed successfully!';
             }
         } catch (error) {
-            console.error(error);
-            document.getElementById('status').innerText = 'Error claiming tokens.';
+            console.error("Error claiming tokens:", error);
+            document.getElementById('status').innerText = 'Error claiming tokens. Check console for details.';
         }
     });
 </script>
