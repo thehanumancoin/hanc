@@ -37,6 +37,7 @@
 <h1>HANCAirdrop</h1>
 <p>Connect your wallet and claim your airdrop tokens!</p>
 <button id="connect-wallet">Connect Wallet</button>
+<button id="disconnect-wallet" disabled>Disconnect Wallet</button>
 <button id="claim-tokens" disabled>Claim Tokens</button>
 <p id="status"></p>
 
@@ -71,6 +72,7 @@
         if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
             web3 = new Web3(window.ethereum || window.web3.currentProvider);
             document.getElementById('connect-wallet').addEventListener('click', connectWallet);
+            document.getElementById('disconnect-wallet').addEventListener('click', disconnectWallet);
             document.getElementById('claim-tokens').addEventListener('click', claimTokens);
         } else {
             alert('Please install MetaMask!');
@@ -84,6 +86,8 @@
                 userAddress = accounts[0];
                 document.getElementById('status').innerText = `Connected: ${userAddress}`;
                 contract = new web3.eth.Contract(contractABI, contractAddress);
+                document.getElementById('connect-wallet').disabled = true;
+                document.getElementById('disconnect-wallet').disabled = false;
                 document.getElementById('claim-tokens').disabled = false;
             } catch (error) {
                 console.error("User denied account access", error);
@@ -92,6 +96,15 @@
         } else {
             alert('MetaMask not detected. Please install MetaMask.');
         }
+    }
+
+    function disconnectWallet() {
+        userAddress = null;
+        contract = null;
+        document.getElementById('status').innerText = 'Disconnected';
+        document.getElementById('connect-wallet').disabled = false;
+        document.getElementById('disconnect-wallet').disabled = true;
+        document.getElementById('claim-tokens').disabled = true;
     }
 
     async function claimTokens() {
@@ -107,7 +120,7 @@
             }
         } catch (error) {
             console.error(error);
-            document.getElementById('status').innerText = 'You are Not Eligible, Kindly Contact The The Hanuman Coin Team If you completed all Tasks for the claim';
+            document.getElementById('status').innerText = 'Error claiming tokens.';
         }
     }
 </script>
