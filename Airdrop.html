@@ -47,6 +47,7 @@
 
     const contractAddress = '0x1a5d6791e228d90c2d7b154238a88d50650c491e'; // Replace with your contract address
     const contractABI = [
+        // Replace with your contract ABI
         { "inputs": [], "name": "claimTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
         { "inputs": [{ "internalType": "address[]", "name": "recipients", "type": "address[]" }], "name": "distributeTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
         { "inputs": [{ "internalType": "address", "name": "_hancToken", "type": "address" }, { "internalType": "uint256", "name": "_tokensPerUser", "type": "uint256" }], "stateMutability": "nonpayable", "type": "constructor" },
@@ -64,11 +65,11 @@
         { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "user", "type": "address" }, { "indexed": false, "internalType": "bool", "name": "eligible", "type": "bool" }], "name": "UserEligibilityUpdated", "type": "event" },
         { "inputs": [], "name": "airdropEnabled", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
         { "inputs": [], "name": "hancToken", "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }
-    ]; // Replace with your contract ABI
+    ];
 
     window.addEventListener('load', async () => {
-        if (window.ethereum) {
-            web3 = new Web3(window.ethereum);
+        if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
+            web3 = new Web3(window.ethereum || window.web3.currentProvider);
             document.getElementById('connect-wallet').addEventListener('click', connectWallet);
             document.getElementById('claim-tokens').addEventListener('click', claimTokens);
         } else {
@@ -77,15 +78,15 @@
     });
 
     async function connectWallet() {
-        if (window.ethereum) {
+        if (typeof window.ethereum !== 'undefined') {
             try {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
                 userAddress = accounts[0];
                 document.getElementById('status').innerText = `Connected: ${userAddress}`;
                 contract = new web3.eth.Contract(contractABI, contractAddress);
                 document.getElementById('claim-tokens').disabled = false;
             } catch (error) {
-                console.error("User denied account access");
+                console.error("User denied account access", error);
                 document.getElementById('status').innerText = 'Error connecting wallet.';
             }
         } else {
