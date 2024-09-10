@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HANCAirdrop Claim</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.3.6/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@web3modal/browser@1.9.8/dist/index.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -43,71 +44,64 @@
 
 <script>
     let web3;
+    let provider;
     let contract;
     let userAddress;
 
     const contractAddress = '0x1a5d6791e228d90c2d7b154238a88d50650c491e'; // Replace with your contract address
     const contractABI = [
         // Replace with your contract ABI
-        { "inputs": [], "name": "claimTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-        { "inputs": [{ "internalType": "address[]", "name": "recipients", "type": "address[]" }], "name": "distributeTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-        { "inputs": [{ "internalType": "address", "name": "_hancToken", "type": "address" }, { "internalType": "uint256", "name": "_tokensPerUser", "type": "uint256" }], "stateMutability": "nonpayable", "type": "constructor" },
-        { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }], "name": "OwnableInvalidOwner", "type": "error" },
-        { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }], "name": "OwnableUnauthorizedAccount", "type": "error" },
-        { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }], "name": "OwnershipTransferred", "type": "event" },
-        { "inputs": [], "name": "renounceOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-        { "inputs": [{ "internalType": "uint256", "name": "_tokensPerUser", "type": "uint256" }], "name": "setTokensPerUser", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-        { "inputs": [], "name": "toggleAirdrop", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-        { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "user", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "tokens", "type": "uint256" }], "name": "TokensAirdropped", "type": "event" },
-        { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "tokens", "type": "uint256" }], "name": "TokensTransferred", "type": "event" },
-        { "inputs": [{ "internalType": "address", "name": "newOwner", "type": "address" }], "name": "transferOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-        { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "transferUnclaimedTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-        { "inputs": [{ "internalType": "address[]", "name": "users", "type": "address[]" }, { "internalType": "bool", "name": "eligibility", "type": "bool" }], "name": "updateEligibility", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-        { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "user", "type": "address" }, { "indexed": false, "internalType": "bool", "name": "eligible", "type": "bool" }], "name": "UserEligibilityUpdated", "type": "event" },
-        { "inputs": [], "name": "airdropEnabled", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
-        { "inputs": [], "name": "hancToken", "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }
+        { "inputs": [], "name": "claimTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
+        // Add other contract ABI entries here as needed
     ];
 
-    window.addEventListener('load', async () => {
-        if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
-            web3 = new Web3(window.ethereum || window.web3.currentProvider);
-            document.getElementById('connect-wallet').addEventListener('click', connectWallet);
-            document.getElementById('disconnect-wallet').addEventListener('click', disconnectWallet);
-            document.getElementById('claim-tokens').addEventListener('click', claimTokens);
-        } else {
-            alert('Please install MetaMask!');
+    const web3Modal = new Web3Modal({
+        cacheProvider: false,
+        providerOptions: {
+            // Add options for different wallets here
+            /* Example:
+            "walletconnect": {
+                package: WalletConnectProvider,
+                options: {
+                    qrcode: true
+                }
+            }
+            */
         }
     });
 
-    async function connectWallet() {
-        if (typeof window.ethereum !== 'undefined') {
-            try {
-                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-                userAddress = accounts[0];
-                document.getElementById('status').innerText = `Connected: ${userAddress}`;
-                contract = new web3.eth.Contract(contractABI, contractAddress);
-                document.getElementById('connect-wallet').disabled = true;
-                document.getElementById('disconnect-wallet').disabled = false;
-                document.getElementById('claim-tokens').disabled = false;
-            } catch (error) {
-                console.error("User denied account access", error);
-                document.getElementById('status').innerText = 'Error connecting wallet.';
-            }
-        } else {
-            alert('MetaMask not detected. Please install MetaMask.');
-        }
-    }
+    document.getElementById('connect-wallet').addEventListener('click', async () => {
+        try {
+            provider = await web3Modal.connect();
+            web3 = new Web3(provider);
+            const accounts = await web3.eth.getAccounts();
+            userAddress = accounts[0];
+            contract = new web3.eth.Contract(contractABI, contractAddress);
 
-    function disconnectWallet() {
+            document.getElementById('status').innerText = `Connected: ${userAddress}`;
+            document.getElementById('connect-wallet').disabled = true;
+            document.getElementById('disconnect-wallet').disabled = false;
+            document.getElementById('claim-tokens').disabled = false;
+        } catch (error) {
+            console.error("Error connecting wallet", error);
+            document.getElementById('status').innerText = 'Error connecting wallet.';
+        }
+    });
+
+    document.getElementById('disconnect-wallet').addEventListener('click', () => {
+        if (provider && provider.close) {
+            provider.close();
+        }
+        web3Modal.clearCachedProvider();
         userAddress = null;
         contract = null;
         document.getElementById('status').innerText = 'Disconnected';
         document.getElementById('connect-wallet').disabled = false;
         document.getElementById('disconnect-wallet').disabled = true;
         document.getElementById('claim-tokens').disabled = true;
-    }
+    });
 
-    async function claimTokens() {
+    document.getElementById('claim-tokens').addEventListener('click', async () => {
         if (!userAddress || !contract) return;
 
         try {
@@ -122,7 +116,7 @@
             console.error(error);
             document.getElementById('status').innerText = 'Error claiming tokens.';
         }
-    }
+    });
 </script>
 
 </body>
