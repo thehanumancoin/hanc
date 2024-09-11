@@ -35,7 +35,7 @@
 <body>
 
 <h1>HANCAirdrop</h1>
-<p>Connect your MetaMask wallet and claim your airdrop tokens!</p>
+<p>Connect your MetaMask wallet and claim your airdrop tokens on the Base network!</p>
 <button id="connect-wallet">Connect MetaMask</button>
 <button id="disconnect-wallet" disabled>Disconnect MetaMask</button>
 <button id="claim-tokens" disabled>Claim Tokens</button>
@@ -46,6 +46,7 @@
     let contract;
     let userAddress;
 
+    const baseChainId = '0x1A';  // Chain ID for Base network (example, replace with correct value)
     const contractAddress = '0x1a5d6791e228d90c2d7b154238a88d50650c491e'; // Replace with your contract address
     const contractABI = [
         { "inputs": [], "name": "claimTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
@@ -57,6 +58,7 @@
         if (window.ethereum) {
             web3 = new Web3(window.ethereum);
             try {
+                await switchToBaseNetwork();
                 await window.ethereum.request({ method: 'eth_requestAccounts' });
             } catch (error) {
                 console.error("User denied account access", error);
@@ -70,6 +72,38 @@
         document.getElementById('disconnect-wallet').addEventListener('click', disconnectWallet);
         document.getElementById('claim-tokens').addEventListener('click', claimTokens);
     });
+
+    async function switchToBaseNetwork() {
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: baseChainId }]
+            });
+        } catch (error) {
+            console.error("Failed to switch to Base network", error);
+            if (error.code === 4902) {
+                // Chain not found, add it
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: baseChainId,
+                            chainName: 'Base',
+                            nativeCurrency: {
+                                name: 'Base',
+                                symbol: 'BASE',
+                                decimals: 18
+                            },
+                            rpcUrls: ['https://mainnet.base.org'],  // Replace with correct RPC URL for Base network
+                            blockExplorerUrls: ['https://explorer.base.org']
+                        }]
+                    });
+                } catch (addError) {
+                    console.error("Failed to add Base network", addError);
+                }
+            }
+        }
+    }
 
     async function connectWallet() {
         if (window.ethereum) {
@@ -108,7 +142,8 @@
             if (hasClaimed) {
                 document.getElementById('status').innerText = 'Tokens already claimed.';
             } else {
-                await contract.methods.claimTokens().send({ from: userAddress });
+                const gasEstimate = await contract.methods.claimTokens().estimateGas({ from: userAddress });
+                await contract.methods.claimTokens().send({ from: userAddress, gas: gasEstimate });
                 document.getElementById('status').innerText = 'Tokens claimed successfully!';
             }
         } catch (error) {
