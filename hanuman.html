@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HANCAirdrop Claim</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.3.6/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        @media (max-width: 600px) {
+            button {
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>HANCAirdrop</h1>
+<p>Connect your MetaMask wallet and claim your airdrop tokens on the Base network!</p>
+<button id="connect-wallet">Connect MetaMask</button>
+<button id="disconnect-wallet" disabled>Disconnect MetaMask</button>
+<button id="claim-tokens" disabled>Claim Tokens</button>
+<p id="status"></p>
+
+<script>
+    let web3;
+    let contract;
+    let userAddress;
+
+    const baseChainId = '0x2105';  // Chain ID for Base network (example, replace with correct value)
+    const contractAddress = '0x1a5d6791e228d90c2d7b154238a88d50650c491e'; // Replace with your contract address
+    const contractABI = [
+        { "inputs": [], "name": "claimTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+        { "inputs": [ { "internalType": "address", "name": "user", "type": "address" } ], "name": "hasClaimed", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }
+        // Add other contract ABI entries here as needed
+    ];
+
+    window.addEventListener('load', async () => {
+        if (window.ethereum) {
+            web3 = new Web3(window.ethereum);
+            try {
+                await switchToBaseNetwork();
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+            } catch (error) {
+                console.error("User denied account access", error);
+                document.getElementById('status').innerText = 'User denied account access. Check console for details.';
+            }
+        } else {
+            alert('Please install MetaMask!');
+        }
+
+        document.getElementById('connect-wallet').addEventListener('click', connectWallet);
+        document.getElementById('disconnect-wallet').addEventListener('click', disconnectWallet);
+        document.getElementById('claim-tokens').addEventListener('click', claimTokens);
+    });
+
+    async function switchToBaseNetwork() {
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: baseChainId }]
+            });
+        } catch (error) {
+            console.error("Failed to switch to Base network", error);
+            if (error.code === 4902) {
+                // Chain not found, add it
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: baseChainId,
+                            chainName: 'Base',
+                            nativeCurrency: {
+                                name: 'Base',
+                                symbol: 'BASE',
+                                decimals: 18
+                            },
+                            rpcUrls: ['https://mainnet.base.org'],  // Replace with correct RPC URL for Base network
+                            blockExplorerUrls: ['https://explorer.base.org']
+                        }]
+                    });
+                } catch (addError) {
+                    console.error("Failed to add Base network", addError);
+                }
+            }
+        }
+    }
+
+    async function connectWallet() {
+        if (window.ethereum) {
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                userAddress = accounts[0];
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+
+                document.getElementById('status').innerText = `Connected: ${userAddress}`;
+                document.getElementById('connect-wallet').disabled = true;
+                document.getElementById('disconnect-wallet').disabled = false;
+                document.getElementById('claim-tokens').disabled = false;
+            } catch (error) {
+                console.error("Error connecting wallet", error);
+                document.getElementById('status').innerText = 'Error connecting wallet. Check console for details.';
+            }
+        } else {
+            alert('MetaMask not detected');
+        }
+    }
+
+    function disconnectWallet() {
+        userAddress = null;
+        contract = null;
+        document.getElementById('status').innerText = 'Disconnected';
+        document.getElementById('connect-wallet').disabled = false;
+        document.getElementById('disconnect-wallet').disabled = true;
+        document.getElementById('claim-tokens').disabled = true;
+    }
+
+    async function claimTokens() {
+        if (!userAddress || !contract) return;
+
+        try {
+            const hasClaimed = await contract.methods.hasClaimed(userAddress).call();
+            if (hasClaimed) {
+                document.getElementById('status').innerText = 'Tokens already claimed.';
+            } else {
+                // Manually set gas limit and gas price
+                const gasLimit = 50000; // You can experiment with this value
+                const gasPrice = await web3.eth.getGasPrice(); // Fetch current gas price
+
+                await contract.methods.claimTokens().send({ 
+                    from: userAddress, 
+                    gas: gasLimit, 
+                    gasPrice: gasPrice 
+                });
+
+                document.getElementById('status').innerText = 'Tokens claimed successfully!';
+            }
+        } catch (error) {
+            console.error("Error claiming tokens:", error);
+            document.getElementById('status').innerText = 'Error claiming tokens. Check console for details.';
+        }
+    }
+</script>
+
+</body>
+</html>
