@@ -134,31 +134,33 @@
         document.getElementById('claim-tokens').disabled = true;
     }
 
-    async function claimTokens() {
-        if (!userAddress || !contract) return;
+async function claimTokens() {
+    if (!userAddress || !contract) return;
 
-        try {
-            const hasClaimed = await contract.methods.hasClaimed(userAddress).call();
-            if (hasClaimed) {
-                document.getElementById('status').innerText = 'Tokens already claimed.';
-            } else {
-                // Manually set gas limit and gas price
-                const gasLimit = 50000; // You can experiment with this value
-                const gasPrice = await web3.eth.getGasPrice(); // Fetch current gas price
-
-                await contract.methods.claimTokens().send({ 
-                    from: userAddress, 
-                    gas: gasLimit, 
-                    gasPrice: gasPrice 
+    try {
+        const hasClaimed = await contract.methods.hasClaimed(userAddress).call();
+        if (hasClaimed) {
+            document.getElementById('status').innerText = 'Tokens already claimed.';
+        } else {
+            await contract.methods.claimTokens().send({ from: userAddress })
+                .on('receipt', function(receipt) {
+                    document.getElementById('status').innerText = 'Tokens claimed successfully!';
+                })
+                .on('error', function(error) {
+                    // Check if the error is a revert (meaning the user might not be eligible)
+                    if (error.message.includes('revert')) {
+                        document.getElementById('status').innerText = 'You are not eligible for the airdrop. Contact The Hanuman Coin Team.';
+                    } else {
+                        document.getElementById('status').innerText = 'Transaction failed. Check console for details.';
+                    }
+                    console.error("Error claiming tokens:", error);
                 });
-
-                document.getElementById('status').innerText = 'Tokens claimed successfully!';
-            }
-        } catch (error) {
-            console.error("Error claiming tokens:", error);
-            document.getElementById('status').innerText = 'Error claiming tokens. Check console for details.';
         }
+    } catch (error) {
+        console.error("Error claiming tokens:", error);
+        document.getElementById('status').innerText = 'Error claiming tokens. Check console for details.';
     }
+}
 </script>
 
 </body>
